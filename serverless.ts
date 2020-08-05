@@ -22,7 +22,6 @@ const serverlessConfiguration: Serverless = {
   },
   plugins: [
     'serverless-webpack',
-    
     'serverless-aws-documentation'
   ],
   provider: {
@@ -50,7 +49,8 @@ const serverlessConfiguration: Serverless = {
       {
         Effect: 'Allow',
         Action:[ 
-          'dynamodb:Query'
+          'dynamodb:Query',
+          'dynamodb:PutItem'
          ],
         Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.IMAGES_TABLE}'
       },
@@ -103,6 +103,18 @@ const serverlessConfiguration: Serverless = {
             method: 'get',
             path: 'groups/{groupId}/images',
             cors: true
+          }
+        }
+      ]
+    },
+    CreateImage:{
+      handler: 'src/lambda/http/createImage.handler',
+      events:[
+        {
+          http: {
+            method: 'post',
+            path: 'groups/{groupId}/images',
+            cors: true,
           }
         }
       ]
