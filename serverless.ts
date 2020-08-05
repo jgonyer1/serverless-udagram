@@ -34,7 +34,8 @@ const serverlessConfiguration: Serverless = {
     environment: {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       GROUPS_TABLE: 'Groups-${self:provider.stage}',
-      IMAGES_TABLE: 'Images-${self:provider.stage}'
+      IMAGES_TABLE: 'Images-${self:provider.stage}',
+      IMAGE_ID_INDEX: 'ImageIdIndex'
     },
     iamRoleStatements:[
       {
@@ -52,6 +53,13 @@ const serverlessConfiguration: Serverless = {
           'dynamodb:Query'
          ],
         Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.IMAGES_TABLE}'
+      },
+      {
+        Effect: 'Allow',
+        Action:[ 
+          'dynamodb:Query'
+         ],
+        Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.IMAGES_TABLE}/index/${self:provider.environment.IMAGE_ID_INDEX}'
       }
     ],
     stage: '${opt:stage, "dev"}',
@@ -87,13 +95,13 @@ const serverlessConfiguration: Serverless = {
         }
       ]
     },
-    GetImages:{
-      handler: 'src/lambda/http/getImages.handler',
+    GetImage:{
+      handler: 'src/lambda/http/getImage.handler',
       events:[
         {
           http: {
             method: 'get',
-            path: 'groups/{groupId}/images',
+            path: 'images/{imageId}',
             cors: true
           }
         }
@@ -132,6 +140,10 @@ const serverlessConfiguration: Serverless = {
             {
               AttributeName: 'timestamp',
               AttributeType: 'S'
+            },
+            {
+              AttributeName: 'imageId',
+              AttributeType: 'S'
             }
           ],
           KeySchema:[
@@ -142,6 +154,20 @@ const serverlessConfiguration: Serverless = {
             {
               AttributeName: 'timestamp',
               KeyType: 'RANGE'
+            }
+          ],
+          GlobalSecondaryIndexes:[
+            {
+              IndexName: '${self.:provider.environment.IMAGE_ID_INDEX}',
+              KeySchema:[
+                {
+                  AttributeName: 'imageId',
+                  KeyType: 'HASH'
+                }
+              ],
+              Projection: {
+                ProjectType: 'ALL'
+              }
             }
           ],
           BillingMode: 'PAY_PER_REQUEST',
