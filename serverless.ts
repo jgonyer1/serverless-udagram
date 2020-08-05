@@ -158,7 +158,7 @@ const serverlessConfiguration: Serverless = {
           ],
           GlobalSecondaryIndexes:[
             {
-              IndexName: '${self.:provider.environment.IMAGE_ID_INDEX}',
+              IndexName: '${self:provider.environment.IMAGE_ID_INDEX}',
               KeySchema:[
                 {
                   AttributeName: 'imageId',
