@@ -166,7 +166,7 @@ const serverlessConfiguration: Serverless = {
                 }
               ],
               Projection: {
-                ProjectType: 'ALL'
+                ProjectionType: 'ALL'
               }
             }
           ],
