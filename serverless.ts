@@ -95,6 +95,18 @@ const serverlessConfiguration: Serverless = {
         }
       ]
     },
+    GetImages:{
+      handler: 'src/lambda/http/getImages.handler',
+      events:[
+        {
+          http: {
+            method: 'get',
+            path: 'groups/{groupId}/images',
+            cors: true
+          }
+        }
+      ]
+    },
     GetImage:{
       handler: 'src/lambda/http/getImage.handler',
       events:[
