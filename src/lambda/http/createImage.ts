@@ -3,8 +3,13 @@ import 'source-map-support/register';
 import * as AWS from 'aws-sdk';
 import * as uuid from 'uuid';
 const docClient = new AWS.DynamoDB.DocumentClient();
+const s3 = new AWS.S3({
+    signatureVersion: 'v4'
+});
 const groupsTable = process.env.GROUPS_TABLE;
 const imagesTable = process.env.IMAGES_TABLE;
+const bucketName = process.env.IMAGES_S3_BUCKET;
+const urlExpiration: number = parseInt(process.env.SIGNED_URL_EXPIRATION);
 
 export const handler:APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     console.log("Caller event: ", event);
@@ -22,14 +27,28 @@ export const handler:APIGatewayProxyHandler = async (event: APIGatewayProxyEvent
         };
     }
     const imageId = uuid.v4();
-    const newItem = createImage(groupId, imageId, event);
+    const newItem = await createImage(groupId, imageId, event);
+    const url = getUploadUrl(imageId);
+    console.log("Returning new item: ", newItem);
     return{
         statusCode: 201,
         headers:{
-            'Allow-Control-Allow-Origin': '*'
+            'Access-Control-Allow-Origin': '*'
         },
-        body: JSON.stringify(newItem)
+        body: JSON.stringify({
+            newItem: newItem,
+            uploadUrl : url
+        })
     }
+}
+
+function getUploadUrl(imageId: string){
+    console.log("urlExpiration: ", urlExpiration);
+    return s3.getSignedUrl('putObject', {
+        Bucket: bucketName,
+        Key: imageId,
+        Expires: urlExpiration
+    });
 }
 
 async function createImage(groupId: string, imageId: string, event: any){
@@ -39,13 +58,15 @@ async function createImage(groupId: string, imageId: string, event: any){
         groupId,
         timestamp,
         imageId,
-        ...newImage
+        ...newImage,
+        imageUrl: `https://${bucketName}.s3.amazonaws.com/${imageId}`
     };
     console.log('Storing new item:', newItem);
     await docClient.put({
         TableName: imagesTable,
-        Item: newImage
+        Item: newItem
     }).promise();
+    console.log("After putting img record into DynamoDB");
     return newItem;
 }
 
