@@ -179,6 +179,19 @@ const serverlessConfiguration: Serverless = {
         }
       },
       handler: 'src/lambda/s3/sendNotifications.handler'
+    },
+    SyncWithElasticsearch:{
+      handler: "src/lambda/dynamoDb/elasticSearchSync.handler",
+      events: [
+        {
+          stream: {
+            type: "dynamodb",
+            arn: {
+              "Fn::GetAtt": ["ImagesDynamoDBTable", "StreamArn"]
+            }
+          }
+        }
+      ]
     }
   },
   resources:{
@@ -263,6 +276,9 @@ const serverlessConfiguration: Serverless = {
             }
           ],
           BillingMode: 'PAY_PER_REQUEST',
+          StreamSpecification:{
+            StreamViewType: "NEW_IMAGE"
+          },
           TableName: '${self:provider.environment.IMAGES_TABLE}'
         }
       },
